@@ -2,14 +2,40 @@ import yt_dlp
 from pydub import AudioSegment
 import os
 
-DOWNLOAD_DIR = 'downloades'
-os.makedirs(DOWNLOAD_DIR,exist_ok = True)
+DOWNLOAD_DIR = "downloades"
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-def download_youtube_audio(url :str) ->str:
-    output_path = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
+
+def download_youtube_audio(url: str) -> str:
+    output_path = os.path.join(
+        DOWNLOAD_DIR,
+        "%(title)s.%(ext)s"
+    )
+
     ydl_opts = {
+        # Download audio only
         "format": "bestaudio/best",
+
+        # Output filename
         "outtmpl": output_path,
+
+        # IMPORTANT: same options that worked in your terminal
+        "force_ipv4": True,
+        "js_runtimes": {
+            "deno": {}
+        },
+
+        # Don't download playlists
+        "noplaylist": True,
+
+        # Retry if connection is temporarily reset
+        "retries": 5,
+        "fragment_retries": 5,
+
+        # Don't wait forever
+        "socket_timeout": 30,
+
+        # Convert downloaded audio to WAV
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
@@ -17,50 +43,81 @@ def download_youtube_audio(url :str) ->str:
                 "preferredquality": "192",
             }
         ],
-        "quiet": True,
+
+        # Show download progress
+        "quiet": False,
     }
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
-        filename = ydl.prepare_filename(info).replace(".webm", ".wav").replace(".m4a", ".wav")
-    return filename
 
+        # Get the original downloaded filename
+        filename = ydl.prepare_filename(info)
+
+        # Change extension to WAV
+        filename = os.path.splitext(filename)[0] + ".wav"
+
+    print(f"Audio downloaded: {filename}")
+
+    return filename
 
 
 def convert_to_wav(input_path: str) -> str:
     """Convert any audio/video file to WAV format using pydub."""
+
     output_path = os.path.splitext(input_path)[0] + "_converted.wav"
+
     audio = AudioSegment.from_file(input_path)
-    audio = audio.set_channels(1).set_frame_rate(16000) #16khz
+
+    # Mono + 16 kHz
+    audio = audio.set_channels(1).set_frame_rate(16000)
+
     audio.export(output_path, format="wav")
+
     return output_path
 
 
+def chunk_audio(wav_path: str, chunk_minutes: int = 10) -> list:
+    """Split WAV audio into chunks."""
 
-def chunk_audio(wav_path : str , chunk_minutes : int = 10) -> list:
     audio = AudioSegment.from_wav(wav_path)
-    chunk_ms = chunk_minutes * 60 * 1000 
+
+    chunk_ms = chunk_minutes * 60 * 1000
 
     chunks = []
 
-    for i, start in enumerate(range(0,len(audio),chunk_ms)):
-        chunk = audio[start : start + chunk_ms]
+    for i, start in enumerate(
+        range(0, len(audio), chunk_ms)
+    ):
+        chunk = audio[start:start + chunk_ms]
+
         chunk_path = f"{wav_path}_chunk_{i}.wav"
-        chunk.export(chunk_path , format = "wav")
+
+        chunk.export(chunk_path, format="wav")
 
         chunks.append(chunk_path)
-    
+
     return chunks
 
+
 def process_input(source: str) -> list:
-    if source.startswith("http://") or source.startswith("https://"):
+
+    if source.startswith(("http://", "https://")):
+
         print("Detected YouTube URL. Downloading audio...")
+
         wav_path = download_youtube_audio(source)
+
     else:
+
         print("Detected local file. Converting to WAV...")
+
         wav_path = convert_to_wav(source)
 
     print("Chunking audio...")
-    chunks = chunk_audio(wav_path)
-    print(f"Audio ready — {len(chunks)} chunk(s) created.")
-    return chunks
 
+    chunks = chunk_audio(wav_path)
+
+    print(f"Audio ready — {len(chunks)} chunk(s) created.")
+
+    return chunks

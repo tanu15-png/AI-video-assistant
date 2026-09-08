@@ -1,12 +1,29 @@
-from dotenv import load_dotenv
-from utils.audio_processor import process_input
-from core.transcriber import transcribe_all
-from core.summarizer import summarize, generate_title
-from core.extractor import extract_action_items, extract_key_decisions, extract_questions
-from core.rag_engine import build_rag_chain, ask_question
+print("1. Starting main.py")
 
+from dotenv import load_dotenv
+print("2. dotenv imported")
+
+from utils.audio_processor import process_input
+print("3. audio_processor imported")
+
+from core.transcriber import transcribe_all
+print("4. transcriber imported")
+
+from core.summarizer import summarize, generate_title
+print("5. summarizer imported")
+
+from core.extractor import (
+    extract_action_items,
+    extract_key_decisions,
+    extract_questions
+)
+print("6. extractor imported")
+
+from core.RAG import build_rag_chain, ask_question
+print("7. rag_engine imported")
 
 load_dotenv()
+print("8. Environment loaded")
 
 def run_pipeline(source :str, language :str = "english") -> dict:
     print("starting AI Video Assistant")

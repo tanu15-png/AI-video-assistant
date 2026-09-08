@@ -1,1 +1,25 @@
+# Virtual environment
+.venv/
+venv/
+
+# Environment variables
 .env
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Downloaded/generated audio
+downloads/
+downloades/
+*.wav
+*.mp3
+*.m4a
+*.webm
+
+# Generated vector database
+vector_db/
+
+# IDE
+.vscode/
+.idea/
